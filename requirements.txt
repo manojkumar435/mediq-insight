@@ -1,0 +1,8 @@
+Flask==3.1.2
+numpy==2.3.4
+PyPDF2==3.0.1
+qiskit==2.2.3
+qiskit_aer==0.17.2
+torch==2.5.1+cu124
+transformers==4.49.0
+Werkzeug==3.1.3

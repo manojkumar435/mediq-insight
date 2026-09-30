@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - MediQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            from: { opacity: 0 },
+                            to: { opacity: 1 },
+                        },
+                        slideUp: {
+                            from: { opacity: 0, transform: 'translateY(20px)' },
+                            to: { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.8 },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white/80 backdrop-blur-lg shadow-sm border-b border-blue-100/50 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">MediQ</h1>
+                        <span class="text-sm text-gray-500 font-medium">Patient Portal</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <!-- Notification Bell -->
+                    <a href="{{ url_for('chat_page') }}" class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        {% if unread_count > 0 %}
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse-soft">{{ unread_count }}</span>
+                        {% endif %}
+                    </a>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-medium">{{ user.full_name[0].upper() if user.full_name else 'P' }}</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-700">{{ user.full_name or 'Patient' }}</p>
+                            <p class="text-xs text-gray-500">{{ user.email }}</p>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('logout') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Sign Out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Welcome Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl p-8 text-white mb-8 animate-fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Welcome back, {{ user.full_name or 'Patient' }}! 👋</h1>
+                    <p class="text-blue-100 text-lg">Track your health journey with AI-powered medical analysis</p>
+                </div>
+                <div class="hidden lg:block">
+                    <div class="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Upload Report Section -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-slide-up">
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-4 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-xl font-semibold text-gray-800">Upload Medical Report</h2>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="border-2 border-dashed border-blue-200 rounded-xl p-8 text-center transition-all duration-300 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer" onclick="document.getElementById('reportFile').click()">
+                            <input type="file" id="reportFile" accept=".pdf" class="hidden">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-700 mb-2">Drop your PDF report here</h3>
+                            <p class="text-gray-500 mb-4">or click to browse files</p>
+                            <div class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Choose PDF File
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Progress -->
+                        <div id="uploadProgress" class="hidden mt-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Uploading...</span>
+                                <span class="text-sm text-gray-500" id="progressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-slide-up">
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 px-6 py-4 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <h2 class="text-xl font-semibold text-gray-800">Recent Reports</h2>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ reports|length }} reports</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        {% if reports %}
+                            <div class="space-y-4">
+                                {% for report in reports %}
+                                <div class="border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all duration-300 cursor-pointer group" onclick="viewReport({{ report.id }})">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-2">
+                                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                    </svg>
+                                                </div>
+                                                <h3 class="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors duration-300">{{ report.report_file }}</h3>
+                                            </div>
+                                            <p class="text-gray-600 text-sm mb-3">Uploaded: {{ report.uploaded_at }}</p>
+                                            <div class="flex items-center space-x-3">
+                                                {% if report.analysis_result %}
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    Analysis Complete
+                                                </span>
+                                                {% else %}
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    <svg class="w-3 h-3 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                    </svg>
+                                                    Processing
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button onclick="deleteReport({{ report.id }}, event)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-300">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                            <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-12">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-700 mb-2">No reports yet</h3>
+                                <p class="text-gray-500">Upload your first medical report to get started with AI analysis</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- My Doctors -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-slide-up">
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">My Doctors</h3>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        {% if doctors %}
+                            <div class="space-y-3">
+                                {% for doctor in doctors %}
+                                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50/50 transition-all duration-300">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center mr-3">
+                                            <span class="text-white text-sm font-medium">{{ doctor.full_name[0].upper() if doctor.full_name else 'D' }}</span>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-800">Dr. {{ doctor.full_name or 'Doctor' }}</p>
+                                            <p class="text-gray-600 text-sm">{{ doctor.email }}</p>
+                                        </div>
+                                    </div>
+                                    <a href="{{ url_for('chat_with_user', other_user_id=doctor.id) }}" class="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded-lg transition-all duration-300">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8">
+                                <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-gray-500 text-sm">No doctors assigned yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-slide-up">
+                    <div class="bg-gradient-to-r from-orange-50 to-yellow-50 px-6 py-4 border-b border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <a href="{{ url_for('chat_page') }}" class="flex items-center w-full px-4 py-3 text-left text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all duration-300 group">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            <span class="font-medium">View Messages</span>
+                            <svg class="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                        
+                        <button onclick="compareReports()" class="flex items-center w-full px-4 py-3 text-left text-green-600 hover:text-green-700 hover:bg-green-50 rounded-xl transition-all duration-300 group">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span class="font-medium">Compare Reports</span>
+                            <svg class="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                        
+                        <button onclick="exportReports()" class="flex items-center w-full px-4 py-3 text-left text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-xl transition-all duration-300 group">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="font-medium">Export Reports</span>
+                            <svg class="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Health Stats -->
+                <div class="bg-gradient-to-br from-teal-500 to-blue-600 rounded-2xl p-6 text-white animate-slide-up">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold">Health Overview</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-teal-100">Total Reports</span>
+                            <span class="text-xl font-bold">{{ reports|length }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-teal-100">Doctors</span>
+                            <span class="text-xl font-bold">{{ doctors|length }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-teal-100">Messages</span>
+                            <span class="text-xl font-bold">{{ unread_count }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div class="flex justify-between items-center p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+                <div class="flex items-center">
+                    <button onclick="closeModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-300 mr-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </button>
+                    <h3 class="text-2xl font-bold text-gray-800" id="modalTitle">Report Details</h3>
+                </div>
+                <button onclick="closeModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="modalContent" class="p-6 max-h-[70vh] overflow-y-auto">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('reportFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadReport(file);
+            }
+        });
+
+        function uploadReport(file) {
+            const formData = new FormData();
+            formData.append('report_file', file);
+
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            
+            progressDiv.classList.remove('hidden');
+
+            // Simulate progress for demo
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 95) progress = 95;
+                progressBar.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress) + '%';
+            }, 200);
+
+            fetch('/upload_report', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressPercent.textContent = '100%';
+                
+                setTimeout(() => {
+                    progressDiv.classList.add('hidden');
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        showAlert('Error: ' + data.error, 'error');
+                    }
+                }, 500);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                progressDiv.classList.add('hidden');
+                showAlert('Upload failed: ' + error, 'error');
+            });
+        }
+
+        function formatAnalysisResult(result) {
+            let html = '';
+            
+            function formatSection(title, content) {
+                let sectionHtml = `<div class="mb-4">`;
+                sectionHtml += `<h5 class="font-semibold text-gray-700 mb-2">${title}</h5>`;
+                sectionHtml += `<div class="bg-gray-50 p-3 rounded-lg text-sm text-gray-800">`;
+                
+                if (typeof content === 'object' && content !== null) {
+                    if (Array.isArray(content)) {
+                        if (content.length > 0) {
+                            sectionHtml += `<ul class="list-disc list-inside space-y-1">`;
+                            content.forEach(item => {
+                                sectionHtml += `<li>${item}</li>`;
+                            });
+                            sectionHtml += `</ul>`;
+                        } else {
+                            sectionHtml += `<p>N/A</p>`;
+                        }
+                    } else {
+                        // Handle nested objects
+                        for (const key in content) {
+                            if (content.hasOwnProperty(key)) {
+                                sectionHtml += `<p><span class="font-medium">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</span> ${content[key]}</p>`;
+                            }
+                        }
+                    }
+                } else {
+                    sectionHtml += `<p>${content}</p>`;
+                }
+                
+                sectionHtml += `</div></div>`;
+                return sectionHtml;
+            }
+
+            if (result.interpretation) {
+                html += formatSection('Interpretation', result.interpretation.overview || 'N/A');
+                if (result.interpretation.key_findings && result.interpretation.key_findings.length > 0) {
+                    html += formatSection('Key Findings', result.interpretation.key_findings);
+                }
+                if (result.interpretation.next_steps && result.interpretation.next_steps.length > 0) {
+                    html += formatSection('Next Steps', result.interpretation.next_steps);
+                }
+                if (result.interpretation.recommendations && result.interpretation.recommendations.length > 0) {
+                    html += formatSection('Recommendations', result.interpretation.recommendations);
+                }
+            }
+
+            if (result.abnormal_values && result.abnormal_values.length > 0) {
+                html += formatSection('Abnormal Values', result.abnormal_values);
+            }
+
+            if (result.quantum_analysis) {
+                html += formatSection('Quantum Analysis', result.quantum_analysis);
+            }
+
+            if (result.severity) {
+                html += formatSection('Severity', result.severity);
+            }
+
+            if (result.timestamp) {
+                html += formatSection('Timestamp', new Date(result.timestamp).toLocaleString());
+            }
+
+            return html;
+        }
+
+        function viewReport(reportId) {
+            fetch(`/get_report/${reportId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const report = data.report;
+                    document.getElementById('modalTitle').textContent = report.report_file;
+                    
+                    let content = `
+                        <div class="space-y-6">
+                            <div class="bg-gray-50 p-4 rounded-xl">
+                                <h4 class="font-semibold text-gray-800 mb-2">Upload Information</h4>
+                                <p class="text-gray-600">Date: ${report.uploaded_at}</p>
+                                <p class="text-gray-600">File: ${report.report_file}</p>
+                            </div>
+                    `;
+                    
+                    if (report.analysis_result) {
+                        content += `
+                            <div class="bg-blue-50 p-4 rounded-xl">
+                                <h4 class="font-semibold text-gray-800 mb-2 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    AI Analysis Results
+                                </h4>
+                                <div class="bg-white p-4 rounded-lg">
+                                    ${formatAnalysisResult(report.analysis_result)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (report.lab_values && Object.keys(report.lab_values).length > 0) {
+                        content += `
+                            <div class="bg-green-50 p-4 rounded-xl">
+                                <h4 class="font-semibold text-gray-800 mb-2 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    Lab Values Extracted
+                                </h4>
+                                <div class="bg-white p-4 rounded-lg">
+                                    <pre class="text-sm text-gray-700 whitespace-pre-wrap">${JSON.stringify(report.lab_values, null, 2)}</pre>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    content += '</div>';
+                    document.getElementById('modalContent').innerHTML = content;
+                    document.getElementById('reportModal').classList.remove('hidden');
+                } else {
+                    showAlert('Failed to load report details', 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Error loading report: ' + error, 'error');
+            });
+        }
+
+        function deleteReport(reportId, event) {
+            event.stopPropagation();
+            if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                fetch(`/delete_report/${reportId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        showAlert('Failed to delete report', 'error');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error deleting report: ' + error, 'error');
+                });
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('reportModal').classList.add('hidden');
+        }
+
+        function compareReports() {
+            showAlert('Report comparison feature is coming soon! 🚀', 'info');
+        }
+
+        function exportReports() {
+            showAlert('Report export feature is coming soon! 📋', 'info');
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500';
+            
+            alertDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-4 rounded-xl shadow-lg z-50 transform transition-all duration-300 translate-x-full`;
+            alertDiv.textContent = message;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                alertDiv.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(alertDiv);
+                }, 300);
+            }, 3000);
+        }
+
+        // Add file drag and drop functionality
+        const dropZone = document.querySelector('[onclick="document.getElementById(\'reportFile\').click()"]');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-400', 'bg-blue-50');
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'application/pdf') {
+                    uploadReport(file);
+                } else {
+                    showAlert('Please upload a PDF file', 'error');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
